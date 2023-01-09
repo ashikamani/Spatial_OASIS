@@ -3,7 +3,7 @@
 ## File name: Mimosa.R
 ## Author: Ashika Mani
 ## Date Created: 10/28/2022
-## Last Modified: 12/24/2022
+## Last Modified: 1/9/2023
 ## Description:
 ##
 ##  This R program runs the Mimosa model on Spatial Oasis data
