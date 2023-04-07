@@ -1,0 +1,128 @@
+---
+title: "Graphs"
+author: "Ashika Mani"
+date: '2023-03-23'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+library(neurobase)
+library(EveTemplate)
+library(dplyr)
+
+Template = readnii(fname = "~/Penn/Elizabeth/Results/2220102_labs_flip.nii.gz")
+ortho2(Template)
+```
+
+
+
+
+```{r}
+load("~/Penn/Elizabeth/Results/intercepts_regions.rda")
+names <- eve_map_labels[["II"]][["integer_label"]]
+names <- names [2:131]
+coefs <- coefficients[["region"]][["(Intercept)"]]
+intbyreg <- data.frame(names,coefs)
+intbyreg[131,] <- c(0,0)
+eve <- eve_map_labels[["II"]]
+hist(coefs)
+```
+
+
+```{r}
+map <- readEveMap(type="II")
+maps <- c(map@.Data)
+labels <- getEveMapLabels(type= "II")
+labels <- labels[-1,]
+#map_labels <- labels$integer_label[match(maps,as.numeric(labels$integer_label))]
+
+#df_map <- as.data.frame(maps)
+#colnames(df_map) <- "names"
+maplabelsdf <- as.data.frame(maps)
+leftjoin <- left_join(maplabelsdf, intbyreg, by=c('maps'='names'))
+
+coefs <- coefficients[["region"]][["(Intercept)"]]
+test_array <- array(leftjoin$coefs, dim = c(181,217,181))
+test_img = oro.nifti::nifti(test_array)
+```
+
+
+```{r}
+library(viridis)
+bound <- max (abs (leftjoin$coefs) )
+log(bound)
+img.coef = remake_img(leftjoin$coefs, img=Template)
+myColors <- rev (colorRampPalette(c ("blue","grey95", "red")) (255))
+mycolors <- rev(topo.colors(255))
+ybreaks <- seq(0,log(bound), length.out=length (myColors)+1)
+ortho2(test_img,y = img.coef, xyz = c(77,114,84), crosshairs = FALSE,col.y = mycolors, ybreaks = ybreaks, ycolorbar=TRUE,text = "Intercept Values", text.cex = 1, text.x = 50, text.y = 10) 
+```
+
+```{r}
+
+```
+
+
+
+```{r}
+library(Rmisc)
+library(knitr)
+whole =read.csv("~/Penn/Elizabeth/Results/results_whole.csv")
+intercept = read.csv("~/Penn/Elizabeth/Results/results_intercept.csv")
+region = read.csv("~/Penn/Elizabeth/Results/results_region.csv")
+whole_table <-  cbind(CI(whole$AUC),CI(whole$pAUC),CI(whole$DSC))
+
+results <- rbind(c("AUC","pAUC","DSC"),whole_table)
+kable(results, digits = 5)
+```
+
+
+
+
+```{r}
+intercept_table <-  cbind(CI(intercept$AUC),CI(intercept$pAUC),CI(intercept$DSC))
+results <- rbind(c("AUC","pAUC","DSC"),intercept_table)
+kable(results, digits = 5)
+```
+
+
+
+```{r}
+region_table <-  cbind(CI(region$AUC),CI(region$pAUC),CI(region$DSC))
+results <- rbind(c("AUC","pAUC","DSC"),region_table)
+kable(results, digits = 5)
+```
+
+# T-tests 
+
+```{r}
+var.test(whole$AUC, intercept$AUC)
+t.test(whole$AUC, intercept$AUC, alternative = "two.sided", var.equal = TRUE)
+```
+
+```{r}
+var.test(whole$pAUC, intercept$pAUC)
+t.test(whole$pAUC, intercept$pAUC, alternative = "two.sided", var.equal = TRUE)
+```
+
+```{r}
+var.test(whole$DSC, intercept$DSC)
+t.test(whole$DSC, intercept$DSC, alternative = "two.sided", var.equal = TRUE)
+```
+
+
+```{r}
+var.test(whole$DSC, region$DSC)
+t.test(whole$DSC, region$DSC, alternative = "two.sided", var.equal = TRUE)
+```
+
